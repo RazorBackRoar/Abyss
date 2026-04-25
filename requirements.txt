@@ -1,0 +1,5 @@
+PySide6>=6.10.1
+pyinstaller>=6.15
+pillow>=12.0.0
+pillow-heif>=1.0.0
+av>=16.0.0

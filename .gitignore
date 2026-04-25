@@ -1,0 +1,47 @@
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
+# Workspace cache
+.code-analysis/
+
+# Packaging / build artifacts
+build/*
+!build/
+!build/dmg-config.json
+pip-wheel-metadata/
+temp-dmg-*
+dmg_temp/
+
+# Dist folder - ignore everything except DMG
+dist/*
+!dist/*.dmg
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+*.log
+*.tmp
+*.orig
+
+# Virtual envs
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+.hypothesis/
+
+# Secrets
+.env.*
+!.env.example
+!.env.sample
+.security
