@@ -1,175 +1,99 @@
 # Abyss
 
-Abyss is a macOS drag-and-drop app for stripping metadata from photos and
-videos. It is built with Python 3.14, PySide6, Pillow, pillow-heif, PyAV, and
-PyInstaller.
-
-![Abyss window](assets/abyss%20window.png)
-
-## What It Does
-
-Abyss accepts files and folders dropped onto its window. Folders are processed
-recursively. Supported media files are rewritten into clean output formats:
-
-| Input | Output |
-| --- | --- |
-| Images | metadata-free `.jpg` |
-| Videos | metadata-free `.mp4` |
-| Unsupported files | skipped |
-
-The app does not create backup copies. It only removes an original after the
-replacement file has been written, moved into place, and verified as non-empty.
-If conversion fails, the original remains in place and the error is logged.
-
-## Metadata Removal Policy
-
-For images, Abyss opens the file with Pillow, applies EXIF orientation to the
-pixels, converts the result to RGB, and writes a fresh JPEG without passing
-EXIF, XMP, IPTC, ICC, PNG text chunks, or other source metadata through to the
-output.
-
-For videos, Abyss first tries to remux compatible audio/video streams into a new
-MP4 container without re-encoding. This strips container and stream metadata
-while preserving the original media bytes when possible. If remuxing fails, it
-tries a high-quality H.264/AAC re-encode. If that also fails, the original file
-is left untouched.
-
-## Safety Rules
-
-- Paths are resolved before processing.
-- Missing paths, non-files, and non-folders are rejected.
-- File names are normalized and sanitized.
-- Temporary files are written in the same directory as the final output.
-- Final replacement uses an atomic move.
-- Originals are deleted only after the replacement exists and has a nonzero
-  size.
-
-Use disposable copies for first tests because successful conversions remove the
-source files.
-
-## Supported Extensions
-
-Images:
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-brightgreen.svg)](https://support.apple.com/en-us/HT211814)
+[![PySide6](https://img.shields.io/badge/PySide6-Qt6-orange.svg)](https://doc.qt.io/qtforpython/)
 
 ```text
-.jpg .jpeg .png .gif .bmp .tif .tiff .webp .heic .heif .avif
+ █████╗ ██████╗ ██╗   ██╗███████╗███████╗
+██╔══██╗██╔══██╗╚██╗ ██╔╝██╔════╝██╔════╝
+███████║██████╔╝ ╚████╔╝ ███████╗███████╗
+██╔══██║██╔══██╗  ╚██╔╝  ╚════██║╚════██║
+██║  ██║██████╔╝   ██║   ███████║███████║
+╚═╝  ╚═╝╚═════╝    ╚═╝   ╚══════╝╚══════╝
 ```
 
-Videos:
+> **Native macOS metadata stripper for photos and videos.**
+> Drop files or folders onto the window and Abyss rewrites them clean — no EXIF, no GPS, no timestamps.
 
-```text
-.mov .mp4 .m4v .avi .mkv .webm .mts .m2ts .3gp .3g2
-```
+---
 
-Extension matching is case-insensitive.
+## Features
 
-## Run From Source
+- **Drag and Drop** — drop files or entire folders; folders are processed recursively
+- **Images** — rewrites to metadata-free JPEG (EXIF orientation applied to pixels before stripping)
+- **Videos** — remuxes to a clean MP4 container without re-encoding when possible; falls back to H.264/AAC re-encode
+- **Atomic Replacement** — originals are only removed after the new file is verified non-empty
+- **Safe Failure** — if conversion fails, the original stays in place and the error is logged
+- **Apple Silicon Native** — arm64 build optimized for M1/M2/M3/M4 chips
 
-```zsh
-cd /Users/home/Workspace/Apps/Abyss
+---
+
+## Supported Formats
+
+| Type | Extensions |
+|---|---|
+| Images | `.jpg` `.jpeg` `.png` `.gif` `.bmp` `.tif` `.tiff` `.webp` `.heic` `.heif` `.avif` |
+| Videos | `.mov` `.mp4` `.m4v` `.avi` `.mkv` `.webm` `.mts` `.m2ts` `.3gp` `.3g2` |
+
+Extension matching is case-insensitive. Unsupported files are skipped without modification.
+
+---
+
+## Installation
+
+1. Download the latest `Abyss.dmg` from [Releases](https://github.com/RazorBackRoar/Abyss/releases)
+2. Open the DMG and drag `Abyss.app` to `/Applications`
+3. First launch — right-click the app → **Open** to bypass Gatekeeper on the ad-hoc signed build
+
+---
+
+## Usage
+
+1. **Launch Abyss**
+2. **Drop** files or folders onto the window
+3. Processing begins immediately — progress and any errors appear in the live log
+
+> **Warning:** Abyss modifies files in place. Successful conversions remove the source file. Test on disposable copies first.
+
+---
+
+## Development
+
+### Requirements
+
+- Python 3.14
+- macOS 12.0+
+- [uv](https://github.com/astral-sh/uv)
+
+### Setup
+
+```bash
+git clone https://github.com/RazorBackRoar/Abyss.git
+cd Abyss
 uv sync
 uv run abyss
 ```
 
-## Build The macOS App
+### Build
 
-```zsh
-cd /Users/home/Workspace/Apps/Abyss
-./build_app.zsh
-open dist/Abyss.app
+```bash
+razorbuild Abyss
+# Output: dist/Abyss.dmg
 ```
 
-The build script creates and ad-hoc signs:
+### Lint & Test
 
-```text
-dist/Abyss.app
+```bash
+uv run ruff check .
+uv run ty check src --python-version 3.14
+uv run pytest tests/ -q
 ```
 
-## Validate The Bundle
+---
 
-```zsh
-codesign --verify --deep --strict --verbose=2 dist/Abyss.app
-file dist/Abyss.app/Contents/MacOS/Abyss
-```
+## License
 
-The executable should report `arm64`.
-
-## Workspace Commands
-
-Abyss is wired into the RazorBackRoar `.razorcore` workflow.
-
-```zsh
-pushabyss
-```
-
-`pushabyss` saves and pushes only the Abyss app folder through `.razorcore`:
-
-```text
-/Users/home/Workspace/Apps/Abyss
-```
-
-The existing `.razorcore` `pushall` command remains available for the broader
-workspace save flow and now includes Abyss as a managed Apps project.
-
-For the shared DMG build used by the Apps workspace:
-
-```zsh
-cd /Users/home/Workspace/Apps/.razorcore
-./universal-build.sh Abyss
-```
-
-That script uses the locked workspace DMG layout:
-
-```text
-window: 600 x 350
-position: 200, 120
-icon size: 100
-app icon: 175, 150
-Applications icon: 425, 150
-format: UDZO
-```
-
-It builds with Python 3.14, PySide6, PyInstaller, ad-hoc signing, and the same
-DMG window sizing as the other RazorBackRoar apps.
-
-## Install Locally
-
-```zsh
-mkdir -p ~/Applications
-ditto dist/Abyss.app ~/Applications/Abyss.app
-open ~/Applications/Abyss.app
-```
-
-If macOS blocks the local unsigned app:
-
-```zsh
-xattr -dr com.apple.quarantine ~/Applications/Abyss.app
-open ~/Applications/Abyss.app
-```
-
-## Manual Metadata Checks
-
-Image outputs can be inspected with macOS metadata tooling:
-
-```zsh
-mdls path/to/output.jpg
-```
-
-Video container and stream metadata can be checked with PyAV:
-
-```zsh
-python - <<'PY'
-from pathlib import Path
-import av
-
-path = Path("path/to/output.mp4")
-
-with av.open(str(path)) as container:
-    print("container metadata:", dict(container.metadata))
-    for stream in container.streams:
-        print(stream.type, stream.index, dict(stream.metadata))
-PY
-```
-
-Some MP4 muxers create structural tags required for playback. Those are not the
-same as preserving camera GPS, creation metadata, user tags, EXIF, XMP, or IPTC.
+MIT License — see [LICENSE](LICENSE) for details.
+Copyright © 2026 RazorBackRoar
