@@ -39,6 +39,7 @@ testpaths = ["tests"]
 [tool.ruff]
 extend = "../ruff.toml"
 target-version = "py314"
+extend-exclude = ["Clean"]  # Compiled app bundle — not linted
 
 [tool.ruff.lint.per-file-ignores]
 "src/abyss/app.py" = ["N802"]
@@ -47,7 +48,6 @@ target-version = "py314"
 [tool.ty.environment]
 extra-paths = [
     "src",
-    "/opt/homebrew/lib/python3.14/site-packages",
 ]
 
 [dependency-groups]

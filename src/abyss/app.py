@@ -71,14 +71,24 @@ class AbyssCanvas(QWidget):
         self.setAcceptDrops(True)
         self.background = QPixmap(str(asset_path("abyss window.png")))
         self.drag_position: tuple[int, int] | None = None
+        self.drag_active = False
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
+            self.drag_active = True
+            self.update()
         else:
             event.ignore()
 
+    def dragLeaveEvent(self, event) -> None:  # noqa: ANN001
+        self.drag_active = False
+        self.update()
+
     def dropEvent(self, event: QDropEvent) -> None:
+        self.drag_active = False
+        self.update()
+
         paths: list[Path] = []
 
         for url in event.mimeData().urls():
@@ -142,6 +152,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Abyss")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
         self.setFixedSize(960, 640)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         self.thread_pool = QThreadPool.globalInstance()
         self.active_workers = 0
@@ -161,7 +172,7 @@ class MainWindow(QMainWindow):
         self.status_panel.setStyleSheet(
             """
             QLabel {
-                background: rgba(0, 0, 0, 150);
+                background: rgba(0, 0, 0, 255);
                 border: 1px solid rgba(171, 255, 63, 120);
                 border-radius: 18px;
                 color: #f3f8ef;
@@ -172,7 +183,6 @@ class MainWindow(QMainWindow):
             """
         )
         self.status_panel.hide()
-
         self.close_button = self.make_hotspot("Close", self.close)
         self.minimize_button = self.make_hotspot("Minimize", self.showMinimized)
         self.zoom_button = self.make_hotspot("Zoom", self.toggle_zoom)
@@ -191,12 +201,17 @@ class MainWindow(QMainWindow):
             """
             QPushButton {
                 background: transparent;
-                border: none;
+                border: 1px solid transparent;
+                border-radius: 11px;
+                padding: 0px;
+                margin: 0px;
             }
             QPushButton:hover {
-                background: rgba(170, 255, 63, 35);
-                border: 1px solid rgba(170, 255, 63, 110);
-                border-radius: 14px;
+                background: transparent;
+                border: 1px solid rgba(170, 255, 63, 190);
+                border-radius: 11px;
+                padding: 0px;
+                margin: 0px;
             }
             """
         )
@@ -211,7 +226,9 @@ class MainWindow(QMainWindow):
         width = self.canvas.width() or self.width()
         height = self.canvas.height() or self.height()
 
-        def box(center_x: float, center_y: float, size: float) -> tuple[int, int, int, int]:
+        def box(
+            center_x: float, center_y: float, size: float
+        ) -> tuple[int, int, int, int]:
             side = int(width * size)
             return (
                 int((center_x * width) - (side / 2)),
@@ -220,16 +237,16 @@ class MainWindow(QMainWindow):
                 side,
             )
 
-        self.close_button.setGeometry(*box(0.148, 0.127, 0.035))
-        self.minimize_button.setGeometry(*box(0.176, 0.127, 0.035))
-        self.zoom_button.setGeometry(*box(0.205, 0.127, 0.035))
-        self.help_button.setGeometry(*box(0.158, 0.839, 0.058))
-        self.info_button.setGeometry(*box(0.839, 0.839, 0.058))
+        self.close_button.setGeometry(*box(0.048, 0.050, 0.030))
+        self.minimize_button.setGeometry(*box(0.083, 0.050, 0.030))
+        self.zoom_button.setGeometry(*box(0.119, 0.050, 0.030))
+        self.help_button.setGeometry(*box(0.060, 0.913, 0.050))
+        self.info_button.setGeometry(*box(0.939, 0.913, 0.050))
         self.status_panel.setGeometry(
-            int(width * 0.28),
-            int(height * 0.782),
-            int(width * 0.44),
-            int(height * 0.12),
+            int(width * 0.245),
+            int(height * 0.58),
+            int(width * 0.51),
+            int(height * 0.155),
         )
 
     def set_status(self, title: str, detail: str, color: str) -> None:
@@ -261,7 +278,9 @@ class MainWindow(QMainWindow):
         )
 
     def show_log(self) -> None:
-        message = "\n".join(self.log_entries[-80:]) if self.log_entries else "No jobs yet."
+        message = (
+            "\n".join(self.log_entries[-80:]) if self.log_entries else "No jobs yet."
+        )
         QMessageBox.information(self, "Processing Log", message)
 
     @Slot(list)
