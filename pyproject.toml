@@ -36,13 +36,65 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 
 [tool.ruff]
-extend = "../ruff.toml"
+line-length = 88
 target-version = "py314"
+src = ["src"]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.pyc",
+    ".pytest_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "*.egg-info",
+    ".DS_Store",
+    ".agent",
+    ".shared",
+    ".toolchains",
+]
 extend-exclude = ["Clean"]  # Compiled app bundle — not linted
 
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "N",
+    "W",
+    "D",
+]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D107",
+    "E501",
+]
+
 [tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
 "src/abyss/app.py" = ["N802"]
 "tests/**/*.py" = ["D", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["abyss"]
+lines-after-imports = 2
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
 
 [tool.ty.environment]
 extra-paths = [
